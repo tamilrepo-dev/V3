@@ -115,99 +115,142 @@ jobs:
           TEMP_M3U="temp_live.m3u"
           echo "$M3U_RAW" > "$TEMP_M3U"
 
-          # Define target channels (same list)
-          TARGET_CHANNELS=(
-            "Sun TV HD"
-            "Sun Music HD"
-            "Sun Life"
-            "Adithya TV"
-            "KTV HD"
-            "Star Vijay HD"
-            "Vijay Super HD"
-            "Colors Tamil"
-            "Jaya TV HD"
-            "Jaya Plus"
-            "Jaya Max"
-            "J Movies"
-            "Polimer TV"
-            "Vasanth TV"
-            "Kalaignar TV"
-            "Raj TV"
-            "Disney Channel"
-            "Disney Junior"
-            "Hungama"
-            "Super Hungama"
-            "Sonic Tamil"
-            "Nick Tamil"
-            "Nickelodeon Jr."
-            "Pogo"
-            "Cartoon Network"
-            "CN HD+ Tamil"
-            "Discovery Kids Tamil"
-            "D Tamil"
-            "History HD"
+          # First, show all available channel names for debugging
+          echo "📋 Available channels in M3U:"
+          awk '
+            /^#EXTINF:/ {
+              line = $0
+              # Try to extract channel name
+              if (match(line, /,([^,]+)$/)) {
+                name = substr(line, RSTART+1)
+              } else if (match(line, /tvg-name="([^"]+)"/, arr)) {
+                name = arr[1]
+              } else if (match(line, /group-title="([^"]+)"/, arr)) {
+                name = arr[1]
+              } else {
+                name = "UNKNOWN"
+              }
+              gsub(/^[ \t]+|[ \t]+$/, "", name)
+              if (name != "" && name != "UNKNOWN") {
+                print "  - " name
+              }
+            }
+          ' "$TEMP_M3U" | sort -u | head -50
+          echo ""
+
+          # Define target channels with variations for better matching
+          # Format: "Display Name" -> array of search patterns
+          declare -A CHANNEL_PATTERNS=(
+            ["Sun TV HD"]="sun tv|sun tv hd"
+            ["Sun Music HD"]="sun music|sun music hd"
+            ["Sun Life"]="sun life"
+            ["Adithya TV"]="adithya|aditya"
+            ["KTV HD"]="ktv|ktv hd"
+            ["Star Vijay HD"]="vijay|star vijay|vijay hd|vijay tv"
+            ["Vijay Super HD"]="vijay super|super hd"
+            ["Colors Tamil"]="colors tamil|colour tamil"
+            ["Jaya TV HD"]="jaya tv|jaya tv hd|jaya hd"
+            ["Jaya Plus"]="jaya plus"
+            ["Jaya Max"]="jaya max"
+            ["J Movies"]="j movies|jmovies"
+            ["Polimer TV"]="polimer"
+            ["Vasanth TV"]="vasanth|vasant"
+            ["Kalaignar TV"]="kalaignar|kalaignar tv"
+            ["Raj TV"]="raj tv|rajtv"
+            ["Disney Channel"]="disney channel|disney"
+            ["Disney Junior"]="disney junior"
+            ["Hungama"]="hungama"
+            ["Super Hungama"]="super hungama"
+            ["Sonic Tamil"]="sonic|sonic tamil"
+            ["Nick Tamil"]="nick tamil|nick"
+            ["Nickelodeon Jr."]="nickelodeon|nick jr"
+            ["Pogo"]="pogo"
+            ["Cartoon Network"]="cartoon network|cartoon"
+            ["CN HD+ Tamil"]="cn hd|cartoon network hd"
+            ["Discovery Kids Tamil"]="discovery kids|discovery tamil"
+            ["D Tamil"]="d tamil|dtamil"
+            ["History HD"]="history|history hd|history tv18"
           )
 
-          # Process M3U and extract matching channels
-          awk -v targets="$(printf '%s\n' "${TARGET_CHANNELS[@]}")" '
+          # Process M3U with flexible matching
+          awk -v patterns="$(declare -p CHANNEL_PATTERNS 2>/dev/null || echo '')" '
             BEGIN {
               RS = "\r?\n"
               ORS = "\n"
-              # Build target lookup table
-              split(targets, tlist, "\n")
-              for (i in tlist) {
-                if (tlist[i] != "") {
-                  g_targets[tolower(tlist[i])] = tlist[i]
-                }
-              }
+              count = 0
+              
+              # Define patterns manually since bash array passing is tricky
+              split("Sun TV HD:Sun TV HD:Sun TV:Sun TV HD:", patterns_arr, ":")
+              # Well just hardcode the patterns in awk for simplicity
             }
             /^#EXTM3U/ { next }
             /^#EXTINF:/ {
               extinf_line = $0
-              # Extract channel name - try different patterns
-              match(extinf_line, /,([^,]+)$/)
-              if (RSTART) {
-                ch_name = substr(extinf_line, RSTART+1)
-              } else {
-                match(extinf_line, /tvg-name="([^"]+)"/, arr)
-                if (RSTART) {
-                  ch_name = arr[1]
-                } else {
-                  next
-                }
-              }
-              # Clean name
-              gsub(/^[ \t]+|[ \t]+$/, "", ch_name)
-              ch_lower = tolower(ch_name)
               
-              # Check if this channel is in our target list
-              matched = 0
-              for (target_lower in g_targets) {
-                if (index(ch_lower, target_lower) > 0 || index(target_lower, ch_lower) > 0) {
-                  matched = 1
-                  display_name = g_targets[target_lower]
-                  break
-                }
+              # Extract channel name
+              name = ""
+              if (match(extinf_line, /,([^,]+)$/)) {
+                name = substr(extinf_line, RSTART+1)
+              } else if (match(extinf_line, /tvg-name="([^"]+)"/, arr)) {
+                name = arr[1]
               }
+              gsub(/^[ \t]+|[ \t]+$/, "", name)
+              name_lower = tolower(name)
               
-              if (matched) {
-                # Get next line (URL)
+              # Check against all target patterns
+              matched_display = ""
+              
+              if (name_lower ~ /sun tv|sun tv hd/) matched_display = "Sun TV HD"
+              else if (name_lower ~ /sun music|sun music hd/) matched_display = "Sun Music HD"
+              else if (name_lower ~ /sun life/) matched_display = "Sun Life"
+              else if (name_lower ~ /adithya|aditya/) matched_display = "Adithya TV"
+              else if (name_lower ~ /ktv|ktv hd/) matched_display = "KTV HD"
+              else if (name_lower ~ /vijay[^s]|star vijay|vijay hd|vijay tv/) matched_display = "Star Vijay HD"
+              else if (name_lower ~ /vijay super|super hd/) matched_display = "Vijay Super HD"
+              else if (name_lower ~ /colors tamil|colour tamil/) matched_display = "Colors Tamil"
+              else if (name_lower ~ /jaya tv|jaya tv hd|jaya hd/) matched_display = "Jaya TV HD"
+              else if (name_lower ~ /jaya plus/) matched_display = "Jaya Plus"
+              else if (name_lower ~ /jaya max/) matched_display = "Jaya Max"
+              else if (name_lower ~ /j movies|jmovies/) matched_display = "J Movies"
+              else if (name_lower ~ /polimer/) matched_display = "Polimer TV"
+              else if (name_lower ~ /vasanth|vasant/) matched_display = "Vasanth TV"
+              else if (name_lower ~ /kalaignar/) matched_display = "Kalaignar TV"
+              else if (name_lower ~ /raj tv|rajtv/) matched_display = "Raj TV"
+              else if (name_lower ~ /disney channel[^j]|disney$/) matched_display = "Disney Channel"
+              else if (name_lower ~ /disney junior/) matched_display = "Disney Junior"
+              else if (name_lower ~ /hungama[^t]/) matched_display = "Hungama"
+              else if (name_lower ~ /super hungama/) matched_display = "Super Hungama"
+              else if (name_lower ~ /sonic tamil|sonic[^k]/) matched_display = "Sonic Tamil"
+              else if (name_lower ~ /nick tamil|nick[^e]|nick$/) matched_display = "Nick Tamil"
+              else if (name_lower ~ /nickelodeon|nick jr/) matched_display = "Nickelodeon Jr."
+              else if (name_lower ~ /pogo/) matched_display = "Pogo"
+              else if (name_lower ~ /cartoon network[^h]|cartoon$/) matched_display = "Cartoon Network"
+              else if (name_lower ~ /cn hd|cartoon network hd/) matched_display = "CN HD+ Tamil"
+              else if (name_lower ~ /discovery kids|discovery tamil/) matched_display = "Discovery Kids Tamil"
+              else if (name_lower ~ /d tamil|dtamil/) matched_display = "D Tamil"
+              else if (name_lower ~ /history hd|history tv|history[^c]/) matched_display = "History HD"
+              
+              if (matched_display != "") {
                 getline url_line
                 if (url_line ~ /^https?:\/\// || url_line ~ /^rtmp?:\/\//) {
-                  # Add group-title if not present
-                  if (extinf_line !~ /group-title=/) {
+                  # Clean and rebuild EXTINF line
+                  if (extinf_line ~ /group-title=/) {
+                    gsub(/group-title="[^"]*"/, "group-title=\"Tamil\"", extinf_line)
+                  } else {
                     if (extinf_line ~ /#EXTINF:-1 /) {
                       sub(/#EXTINF:-1 /, "#EXTINF:-1 group-title=\"Tamil\" ", extinf_line)
                     } else {
                       sub(/#EXTINF:/, "#EXTINF: group-title=\"Tamil\" ", extinf_line)
                     }
                   }
-                  # Ensure it ends with the correct display name
-                  sub(/,[^,]+$/, "," display_name, extinf_line)
+                  
+                  # Update channel name to our standard format
+                  sub(/,[^,]+$/, "," matched_display, extinf_line)
                   
                   print extinf_line
                   print url_line
                   count++
+                  matched[matched_display] = 1
                 }
               }
               next
@@ -215,11 +258,18 @@ jobs:
             { next }
             END {
               print "COUNT:" count > "/dev/stderr"
+              for (ch in matched) {
+                print "MATCHED:" ch > "/dev/stderr"
+              }
             }
-          ' "$TEMP_M3U" 2> count.txt >> "$OUTPUT"
+          ' "$TEMP_M3U" 2> match_log.txt >> "$OUTPUT"
 
-          LIVE_COUNT=$(grep "COUNT:" count.txt 2>/dev/null | cut -d: -f2 || echo 0)
-          rm -f "$TEMP_M3U" count.txt
+          LIVE_COUNT=$(grep "COUNT:" match_log.txt 2>/dev/null | cut -d: -f2 || echo 0)
+          
+          echo "✅ Matched channels:"
+          grep "MATCHED:" match_log.txt 2>/dev/null | cut -d: -f2 | sort || echo "  None matched"
+          
+          rm -f "$TEMP_M3U" match_log.txt
 
           # 3️⃣ Append static channels
           echo "" >> "$OUTPUT"
@@ -268,18 +318,13 @@ jobs:
           VOD=$(grep -c '^#EXTINF.*group-title="VOD"' "$OUTPUT" 2>/dev/null || echo 0)
           TOTAL=$((TAMIL + STATIC + VOD))
           echo "✅ main.m3u built with $TOTAL channels:"
-          echo "   🎯 Live Tamil (M3U): $LIVE_COUNT (found: $TAMIL)"
+          echo "   🎯 Live Tamil (M3U): $TAMIL matched out of 29 target channels"
           echo "   📦 Static (other.m3u): $STATIC"
           echo "   🎬 VOD (tamilrepo-dev): $VOD"
           echo "tamil=$TAMIL" >> "$GITHUB_OUTPUT"
           echo "static=$STATIC" >> "$GITHUB_OUTPUT"
           echo "vod=${{ steps.download_vod.outputs.vod_count }}" >> "$GITHUB_OUTPUT"
           echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
-
-          if [ "$TAMIL" -eq 0 ]; then
-            echo "⚠️ No live Tamil channels found — M3U first 10 lines:"
-            echo "$M3U_RAW" | head -20
-          fi
 
       - name: Commit main.m3u
         run: |
