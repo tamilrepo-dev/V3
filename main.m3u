@@ -589,6 +589,8 @@ https://streams2.sofast.tv/ptnr-yupptv/title-THALAA-TV-TAM_yupptv/v1/master/611d
 https://player.mslivestream.net/mslive/9fe7c84b8253e88099d47237e0b7367c.sdp/playlist.m3u8
 
 # === VOD (from tamilrepo-dev/VOD) ===
+#EXTINF:-1 tvg-logo="https://static.moviecrow.com/gallery/20260409/255937-Guest%20Sakshi%20Agarwal%20Vidhu%20Balaji%20Director%20Ranga%20Bhuvaneswar%20Chapter%202%20Music%20AK%20Tariq.jpg" group-title="VOD", Guest (2026) Tamil Audio
+http://filex.me:80//movie/71626281/162627271/1148715.mp4
 #EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/5bnBIP6brIVCOgQ6D4lIQ6CbUvs.jpg" group-title="VOD", Kadhal Kadhai Sollava (2026) Tamil Audio
 http://filex.me:80//movie/71626281/162627271/1145157.mp4
 #EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/mAX1ujOROXtKsOuIg5MbJbotOyD.jpg" group-title="VOD", TN 2026 (2026) Tamil Audio
