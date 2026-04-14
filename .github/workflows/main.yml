@@ -1,0 +1,294 @@
+name: Auto-Update Main M3U
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  build-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify other.m3u exists
+        run: |
+          OTHER_M3U=".github/workflows/other.m3u"
+          if [ ! -f "$OTHER_M3U" ]; then
+            echo "❌ $OTHER_M3U not found — aborting"
+            exit 1
+          fi
+          echo "✅ $OTHER_M3U located."
+
+      - name: Normalize other.m3u
+        run: |
+          OTHER_M3U=".github/workflows/other.m3u"
+          sudo apt-get update && sudo apt-get install -y dos2unix
+          sed -i '1s/^\xEF\xBB\xBF//' "$OTHER_M3U"
+          dos2unix "$OTHER_M3U" 2>/dev/null || sed -i 's/\r$//' "$OTHER_M3U"
+          sed -i 's/[ \t]*$//' "$OTHER_M3U"
+
+      - name: Download and normalize vod.m3u
+        id: download_vod
+        run: |
+          VOD_URL="https://raw.githubusercontent.com/codedbyakil/VOD/refs/heads/main/vod.m3u"
+          VOD_FILE="vod_temp.m3u"
+          
+          echo "📥 Fetching VOD playlist from $VOD_URL"
+          for i in {1..3}; do
+            if curl -sfL --max-time 30 \
+              -H "User-Agent: Mozilla/5.0 (compatible; GitHub-Actions)" \
+              -o "$VOD_FILE" "$VOD_URL"; then
+              echo "✅ Download succeeded on attempt $i"
+              break
+            else
+              echo "⚠️ Attempt $i failed, retrying in 2s..."
+              sleep 2
+            fi
+            if [ $i -eq 3 ]; then
+              echo "❌ All 3 attempts failed to download vod.m3u"
+              exit 1
+            fi
+          done
+
+          if [ ! -s "$VOD_FILE" ]; then
+            echo "❌ vod.m3u is empty — aborting"
+            exit 1
+          fi
+
+          # Normalize
+          sed -i '1s/^\xEF\xBB\xBF//' "$VOD_FILE"
+          dos2unix "$VOD_FILE" 2>/dev/null || sed -i 's/\r$//' "$VOD_FILE"
+          sed -i 's/[ \t]*$//' "$VOD_FILE"
+
+          COUNT=$(grep -c '^#EXTINF:' "$VOD_FILE" 2>/dev/null || echo 0)
+          echo "✅ vod.m3u loaded — $COUNT channel(s)"
+          echo "vod_count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Build main.m3u (Live Tamil M3U + other.m3u + VOD)
+        id: build_main
+        run: |
+          OUTPUT="main.m3u"
+          OTHER_M3U=".github/workflows/other.m3u"
+          VOD_FILE="vod_temp.m3u"
+
+          # 1️⃣ Header
+          echo "#EXTM3U x-tvg-url=\"https://iptv-org.github.io/epg/guides/tamil.xml\"" > "$OUTPUT"
+
+          # 2️⃣ Fetch & inject live Tamil channels from M3U
+          echo "# === LIVE TAMIL (M3U) ===" >> "$OUTPUT"
+
+          M3U_URL="https://kliv.fun/jio-plus"
+
+          echo "📡 Fetching live channel M3U from $M3U_URL"
+          M3U_RAW=""
+          for i in {1..3}; do
+            M3U_RAW=$(curl -sfL --max-time 25 \
+              -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" \
+              -H "Accept: audio/x-mpegurl, application/vnd.apple.mpegurl, */*" \
+              "$M3U_URL" 2>/dev/null) && break
+            echo "⚠️ Attempt $i failed, retrying in 3s..."
+            sleep 3
+          done
+
+          if [ -z "$M3U_RAW" ]; then
+            echo "❌ All retries failed — no response from $M3U_URL"
+            exit 1
+          fi
+
+          # Check for HTML error
+          if [[ "${M3U_RAW:0:1}" == "<" ]]; then
+            echo "❌ Received HTML instead of M3U. First 300 chars:"
+            echo "$M3U_RAW" | head -c 300
+            echo
+            exit 1
+          fi
+
+          # Save temp file for processing
+          TEMP_M3U="temp_live.m3u"
+          echo "$M3U_RAW" > "$TEMP_M3U"
+
+          # Define target channels (same list)
+          TARGET_CHANNELS=(
+            "Sun TV HD"
+            "Sun Music HD"
+            "Sun Life"
+            "Adithya TV"
+            "KTV HD"
+            "Star Vijay HD"
+            "Vijay Super HD"
+            "Colors Tamil"
+            "Jaya TV HD"
+            "Jaya Plus"
+            "Jaya Max"
+            "J Movies"
+            "Polimer TV"
+            "Vasanth TV"
+            "Kalaignar TV"
+            "Raj TV"
+            "Disney Channel"
+            "Disney Junior"
+            "Hungama"
+            "Super Hungama"
+            "Sonic Tamil"
+            "Nick Tamil"
+            "Nickelodeon Jr."
+            "Pogo"
+            "Cartoon Network"
+            "CN HD+ Tamil"
+            "Discovery Kids Tamil"
+            "D Tamil"
+            "History HD"
+          )
+
+          # Process M3U and extract matching channels
+          awk -v targets="$(printf '%s\n' "${TARGET_CHANNELS[@]}")" '
+            BEGIN {
+              RS = "\r?\n"
+              ORS = "\n"
+              # Build target lookup table
+              split(targets, tlist, "\n")
+              for (i in tlist) {
+                if (tlist[i] != "") {
+                  g_targets[tolower(tlist[i])] = tlist[i]
+                }
+              }
+            }
+            /^#EXTM3U/ { next }
+            /^#EXTINF:/ {
+              extinf_line = $0
+              # Extract channel name - try different patterns
+              match(extinf_line, /,([^,]+)$/)
+              if (RSTART) {
+                ch_name = substr(extinf_line, RSTART+1)
+              } else {
+                match(extinf_line, /tvg-name="([^"]+)"/, arr)
+                if (RSTART) {
+                  ch_name = arr[1]
+                } else {
+                  next
+                }
+              }
+              # Clean name
+              gsub(/^[ \t]+|[ \t]+$/, "", ch_name)
+              ch_lower = tolower(ch_name)
+              
+              # Check if this channel is in our target list
+              matched = 0
+              for (target_lower in g_targets) {
+                if (index(ch_lower, target_lower) > 0 || index(target_lower, ch_lower) > 0) {
+                  matched = 1
+                  display_name = g_targets[target_lower]
+                  break
+                }
+              }
+              
+              if (matched) {
+                # Get next line (URL)
+                getline url_line
+                if (url_line ~ /^https?:\/\// || url_line ~ /^rtmp?:\/\//) {
+                  # Add group-title if not present
+                  if (extinf_line !~ /group-title=/) {
+                    if (extinf_line ~ /#EXTINF:-1 /) {
+                      sub(/#EXTINF:-1 /, "#EXTINF:-1 group-title=\"Tamil\" ", extinf_line)
+                    } else {
+                      sub(/#EXTINF:/, "#EXTINF: group-title=\"Tamil\" ", extinf_line)
+                    }
+                  }
+                  # Ensure it ends with the correct display name
+                  sub(/,[^,]+$/, "," display_name, extinf_line)
+                  
+                  print extinf_line
+                  print url_line
+                  count++
+                }
+              }
+              next
+            }
+            { next }
+            END {
+              print "COUNT:" count > "/dev/stderr"
+            }
+          ' "$TEMP_M3U" 2> count.txt >> "$OUTPUT"
+
+          LIVE_COUNT=$(grep "COUNT:" count.txt 2>/dev/null | cut -d: -f2 || echo 0)
+          rm -f "$TEMP_M3U" count.txt
+
+          # 3️⃣ Append static channels
+          echo "" >> "$OUTPUT"
+          echo "# === STATIC CHANNELS (from .github/workflows/other.m3u) ===" >> "$OUTPUT"
+          awk '
+            /^#EXTM3U/ { next }
+            NF == 0 { next }
+            { print }
+          ' "$OTHER_M3U" >> "$OUTPUT"
+
+          # 4️⃣ Append VOD — robust group-title enforcement
+          echo "" >> "$OUTPUT"
+          echo "# === VOD (from tamilrepo-dev/VOD) ===" >> "$OUTPUT"
+          awk '
+            BEGIN { RS = "\r?\n"; ORS = "\n" }
+            /^#EXTM3U/ { next }
+            NF == 0 { next }
+            /^#EXTINF:/ {
+              line = $0
+              # Force group-title="VOD"
+              if (match(line, /group-title="[^"]*"/)) {
+                gsub(/group-title="[^"]*"/, "group-title=\"VOD\"", line)
+              } else {
+                if (match(line, /#EXTINF:-1 /)) {
+                  sub(/#EXTINF:-1 /, "#EXTINF:-1 group-title=\"VOD\" ", line)
+                } else if (match(line, /#EXTINF:-1,/)) {
+                  sub(/#EXTINF:-1,/, "#EXTINF:-1 group-title=\"VOD\",", line)
+                } else {
+                  sub(/#EXTINF:/, "#EXTINF: group-title=\"VOD\" ", line)
+                }
+              }
+              print line
+              if ((getline nextline) > 0) {
+                print nextline
+              } else {
+                print ""
+              }
+              next
+            }
+            { print }
+          ' "$VOD_FILE" >> "$OUTPUT"
+
+          # 5️⃣ Stats
+          TAMIL=$(grep -c '^#EXTINF:.*group-title="Tamil"' "$OUTPUT" 2>/dev/null || echo 0)
+          STATIC=$(awk '/^#EXTINF:/ && !/group-title="Tamil"/ && !/group-title="VOD"/ {count++} END {print count+0}' "$OUTPUT")
+          VOD=$(grep -c '^#EXTINF.*group-title="VOD"' "$OUTPUT" 2>/dev/null || echo 0)
+          TOTAL=$((TAMIL + STATIC + VOD))
+          echo "✅ main.m3u built with $TOTAL channels:"
+          echo "   🎯 Live Tamil (M3U): $LIVE_COUNT (found: $TAMIL)"
+          echo "   📦 Static (other.m3u): $STATIC"
+          echo "   🎬 VOD (tamilrepo-dev): $VOD"
+          echo "tamil=$TAMIL" >> "$GITHUB_OUTPUT"
+          echo "static=$STATIC" >> "$GITHUB_OUTPUT"
+          echo "vod=${{ steps.download_vod.outputs.vod_count }}" >> "$GITHUB_OUTPUT"
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+
+          if [ "$TAMIL" -eq 0 ]; then
+            echo "⚠️ No live Tamil channels found — M3U first 10 lines:"
+            echo "$M3U_RAW" | head -20
+          fi
+
+      - name: Commit main.m3u
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main.m3u
+          if git diff --cached --quiet; then
+            echo "➡️ No changes — skipping commit"
+            exit 0
+          fi
+          git commit -m "📺 main.m3u: ${{ steps.build_main.outputs.tamil }} Live Tamil + ${{ steps.build_main.outputs.static }} Static + ${{ steps.build_main.outputs.vod }} VOD | $(date -u '+%Y-%m-%d %H:%M')"
+          git push origin main
