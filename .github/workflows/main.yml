@@ -115,110 +115,53 @@ jobs:
           TEMP_M3U="temp_live.m3u"
           echo "$M3U_RAW" > "$TEMP_M3U"
 
-          # First, show all available channel names for debugging
-          echo "📋 Available channels in M3U:"
-          awk '
-            /^#EXTINF:/ {
-              line = $0
-              # Try to extract channel name
-              if (match(line, /,([^,]+)$/)) {
-                name = substr(line, RSTART+1)
-              } else if (match(line, /tvg-name="([^"]+)"/, arr)) {
-                name = arr[1]
-              } else if (match(line, /group-title="([^"]+)"/, arr)) {
-                name = arr[1]
-              } else {
-                name = "UNKNOWN"
-              }
-              gsub(/^[ \t]+|[ \t]+$/, "", name)
-              if (name != "" && name != "UNKNOWN") {
-                print "  - " name
-              }
-            }
-          ' "$TEMP_M3U" | sort -u | head -50
-          echo ""
-
-          # Define target channels - EXACT match list (no loose patterns)
-          declare -A TARGET_CHANNELS=(
-            ["Sun TV HD"]="sun tv hd"
-            ["Sun Music HD"]="sun music hd"
-            ["Sun Life"]="sun life"
-            ["Adithya TV"]="adithya tv"
-            ["KTV HD"]="ktv hd"
-            ["Star Vijay HD"]="star vijay hd"
-            ["Vijay Super HD"]="vijay super hd"
-            ["Colors Tamil"]="colors tamil"
-            ["Jaya TV HD"]="jaya tv hd"
-            ["Jaya Plus"]="jaya plus"
-            ["Jaya Max"]="jaya max"
-            ["J Movies"]="j movies"
-            ["Polimer TV"]="polimer tv"
-            ["Vasanth TV"]="vasanth tv"
-            ["Kalaignar TV"]="kalaignar tv"
-            ["Raj TV"]="raj tv"
-            ["Disney Channel"]="disney channel"
-            ["Disney Junior"]="disney junior"
-            ["Hungama"]="hungama"
-            ["Super Hungama"]="super hungama"
-            ["Sonic Tamil"]="sonic tamil"
-            ["Nick Tamil"]="nick tamil"
-            ["Nickelodeon Jr."]="nickelodeon jr"
-            ["Pogo"]="pogo"
-            ["Cartoon Network"]="cartoon network"
-            ["CN HD+ Tamil"]="cn hd+ tamil"
-            ["Discovery Kids Tamil"]="discovery kids tamil"
-            ["D Tamil"]="d tamil"
-            ["History HD"]="history hd"
-          )
-
-          # Process M3U with EXACT matching and preserve logos
+          # Process M3U with exact matching and preserve logos
           python3 << 'PYTHON_SCRIPT'
           import re
           import sys
 
           # Read the temp M3U file
           with open('temp_live.m3u', 'r', encoding='utf-8', errors='ignore') as f:
-              content = f.read()
-
-          # Split into lines
-          lines = content.split('\n')
+              lines = f.readlines()
           
           # Target channels with exact match patterns (case insensitive)
-          target_patterns = {
-              "Sun TV HD": r'(?i)^sun tv hd$',
-              "Sun Music HD": r'(?i)^sun music hd$',
-              "Sun Life": r'(?i)^sun life$',
-              "Adithya TV": r'(?i)^adithya tv$',
-              "KTV HD": r'(?i)^ktv hd$',
-              "Star Vijay HD": r'(?i)^star vijay hd$',
-              "Vijay Super HD": r'(?i)^vijay super hd$',
-              "Colors Tamil": r'(?i)^colors tamil$',
-              "Jaya TV HD": r'(?i)^jaya tv hd$',
-              "Jaya Plus": r'(?i)^jaya plus$',
-              "Jaya Max": r'(?i)^jaya max$',
-              "J Movies": r'(?i)^j movies$',
-              "Polimer TV": r'(?i)^polimer tv$',
-              "Vasanth TV": r'(?i)^vasanth tv$',
-              "Kalaignar TV": r'(?i)^kalaignar tv$',
-              "Raj TV": r'(?i)^raj tv$',
-              "Disney Channel": r'(?i)^disney channel$',
-              "Disney Junior": r'(?i)^disney junior$',
-              "Hungama": r'(?i)^hungama$',
-              "Super Hungama": r'(?i)^super hungama$',
-              "Sonic Tamil": r'(?i)^sonic tamil$',
-              "Nick Tamil": r'(?i)^nick tamil$',
-              "Nickelodeon Jr.": r'(?i)^nickelodeon jr$',
-              "Pogo": r'(?i)^pogo$',
-              "Cartoon Network": r'(?i)^cartoon network$',
-              "CN HD+ Tamil": r'(?i)^cn hd\+ tamil$',
-              "Discovery Kids Tamil": r'(?i)^discovery kids tamil$',
-              "D Tamil": r'(?i)^d tamil$',
-              "History HD": r'(?i)^history hd$'
+          # Format: "Display Name" -> [pattern1, pattern2, ...]
+          channel_patterns = {
+              "Sun TV HD": [r'(?i)^sun tv hd$', r'(?i)^sun tv$', r'(?i)^sunhd$'],
+              "Sun Music HD": [r'(?i)^sun music hd$', r'(?i)^sun music$', r'(?i)^sunmusic$'],
+              "Sun Life": [r'(?i)^sun life$', r'(?i)^sunlife$'],
+              "Adithya TV": [r'(?i)^adithya tv$', r'(?i)^adithya$', r'(?i)^aditya tv$'],
+              "KTV HD": [r'(?i)^ktv hd$', r'(?i)^ktv$'],
+              "Star Vijay HD": [r'(?i)^star vijay hd$', r'(?i)^vijay hd$', r'(?i)^star vijay$', r'(?i)^vijay tv$', r'(?i)^vijay$'],
+              "Vijay Super HD": [r'(?i)^vijay super hd$', r'(?i)^vijay super$', r'(?i)^super vijay$'],
+              "Colors Tamil": [r'(?i)^colors tamil$', r'(?i)^colour tamil$', r'(?i)^colors$'],
+              "Jaya TV HD": [r'(?i)^jaya tv hd$', r'(?i)^jaya tv$', r'(?i)^jayahd$'],
+              "Jaya Plus": [r'(?i)^jaya plus$', r'(?i)^jayaplus$'],
+              "Jaya Max": [r'(?i)^jaya max$', r'(?i)^jayamax$'],
+              "J Movies": [r'(?i)^j movies$', r'(?i)^jmovies$', r'(?i)^j movie$'],
+              "Polimer TV": [r'(?i)^polimer tv$', r'(?i)^polimer$'],
+              "Vasanth TV": [r'(?i)^vasanth tv$', r'(?i)^vasanth$', r'(?i)^vasant tv$'],
+              "Kalaignar TV": [r'(?i)^kalaignar tv$', r'(?i)^kalaignar$'],
+              "Raj TV": [r'(?i)^raj tv$', r'(?i)^rajtv$', r'(?i)^raj$'],
+              "Disney Channel": [r'(?i)^disney channel$', r'(?i)^disney$', r'(?i)^disney ch$'],
+              "Disney Junior": [r'(?i)^disney junior$', r'(?i)^disney jr$', r'(?i)^junior$'],
+              "Hungama": [r'(?i)^hungama$', r'(?i)^hungama tv$'],
+              "Super Hungama": [r'(?i)^super hungama$', r'(?i)^hungama super$'],
+              "Sonic Tamil": [r'(?i)^sonic tamil$', r'(?i)^sonic$', r'(?i)^sonic tv$'],
+              "Nick Tamil": [r'(?i)^nick tamil$', r'(?i)^nick$', r'(?i)^nick tv$'],
+              "Nickelodeon Jr.": [r'(?i)^nickelodeon jr$', r'(?i)^nick jr$', r'(?i)^nickelodeon junior$'],
+              "Pogo": [r'(?i)^pogo$', r'(?i)^pogo tv$'],
+              "Cartoon Network": [r'(?i)^cartoon network$', r'(?i)^cn$', r'(?i)^cartoon$'],
+              "CN HD+ Tamil": [r'(?i)^cn hd\+ tamil$', r'(?i)^cn hd$', r'(?i)^cn\+$'],
+              "Discovery Kids Tamil": [r'(?i)^discovery kids tamil$', r'(?i)^discovery kids$', r'(?i)^kids discovery$'],
+              "D Tamil": [r'(?i)^d tamil$', r'(?i)^dtamil$', r'(?i)^d tv$'],
+              "History HD": [r'(?i)^history hd$', r'(?i)^history$', r'(?i)^history tv18$']
           }
 
           matched_channels = []
-          i = 0
+          matched_names = set()
           
+          i = 0
           while i < len(lines):
               line = lines[i].strip()
               if line.startswith('#EXTINF:'):
@@ -228,51 +171,58 @@ jobs:
                   if match:
                       channel_name = match.group(1).strip()
                       
-                      # Check if this channel matches any target (exact match)
+                      # Check if this channel matches any target pattern
                       matched_display = None
-                      for display_name, pattern in target_patterns.items():
-                          if re.match(pattern, channel_name, re.IGNORECASE):
-                              matched_display = display_name
+                      for display_name, patterns in channel_patterns.items():
+                          for pattern in patterns:
+                              if re.match(pattern, channel_name, re.IGNORECASE):
+                                  matched_display = display_name
+                                  break
+                          if matched_display:
                               break
                       
-                      if matched_display and i + 1 < len(lines):
+                      # Only add if not already matched (prefer first occurrence)
+                      if matched_display and matched_display not in matched_names and i + 1 < len(lines):
                           url_line = lines[i + 1].strip()
                           if url_line.startswith(('http://', 'https://', 'rtmp://')):
-                              # Extract existing logo if present
-                              logo_match = re.search(r'tvg-logo="([^"]*)"', line)
-                              tvg_logo = logo_match.group(1) if logo_match else ""
-                              
-                              # Rebuild EXTINF line with proper attributes
-                              # Preserve original tvg-id, tvg-name, tvg-logo
+                              # Extract existing attributes
                               tvg_id_match = re.search(r'tvg-id="([^"]*)"', line)
                               tvg_name_match = re.search(r'tvg-name="([^"]*)"', line)
+                              tvg_logo_match = re.search(r'tvg-logo="([^"]*)"', line)
+                              tvg_url_match = re.search(r'tvg-url="([^"]*)"', line)
                               
                               tvg_id = tvg_id_match.group(1) if tvg_id_match else ""
                               tvg_name = tvg_name_match.group(1) if tvg_name_match else matched_display
+                              tvg_logo = tvg_logo_match.group(1) if tvg_logo_match else ""
+                              tvg_url = tvg_url_match.group(1) if tvg_url_match else ""
                               
-                              # Build new EXTINF line
-                              new_extinf = f'#EXTINF:-1'
+                              # Build new EXTINF line preserving all attributes
+                              new_extinf = '#EXTINF:-1'
                               if tvg_id:
                                   new_extinf += f' tvg-id="{tvg_id}"'
                               if tvg_name:
                                   new_extinf += f' tvg-name="{tvg_name}"'
                               if tvg_logo:
                                   new_extinf += f' tvg-logo="{tvg_logo}"'
+                              if tvg_url:
+                                  new_extinf += f' tvg-url="{tvg_url}"'
                               new_extinf += f' group-title="Tamil",{matched_display}'
                               
                               matched_channels.append((new_extinf, url_line))
+                              matched_names.add(matched_display)
                               print(f"✅ Matched: {channel_name} -> {matched_display}", file=sys.stderr)
                   i += 2
               else:
                   i += 1
 
-          # Write matched channels to output
+          # Write matched channels to file
           with open('matched_channels.txt', 'w', encoding='utf-8') as f:
               for extinf, url in matched_channels:
                   f.write(extinf + '\n')
                   f.write(url + '\n')
           
           print(f"COUNT:{len(matched_channels)}", file=sys.stderr)
+          print(f"MATCHED:{','.join(matched_names)}", file=sys.stderr)
           PYTHON_SCRIPT
 
           # Append matched channels to main.m3u
@@ -288,12 +238,12 @@ jobs:
 
           rm -f "$TEMP_M3U"
 
-          # 3️⃣ Append static channels (preserve their original logos)
+          # 3️⃣ Append static channels (preserve their original logos and attributes)
           echo "" >> "$OUTPUT"
           echo "# === STATIC CHANNELS (from .github/workflows/other.m3u) ===" >> "$OUTPUT"
-          cat "$OTHER_M3U" | grep -v '^#EXTM3U' >> "$OUTPUT"
+          grep -v '^#EXTM3U' "$OTHER_M3U" | grep -v '^$' >> "$OUTPUT"
 
-          # 4️⃣ Append VOD (preserve existing logos)
+          # 4️⃣ Append VOD (preserve existing logos and attributes)
           echo "" >> "$OUTPUT"
           echo "# === VOD (from tamilrepo-dev/VOD) ===" >> "$OUTPUT"
           python3 << 'PYTHON_VOD'
@@ -307,7 +257,7 @@ jobs:
           while i < len(lines):
               line = lines[i].strip()
               if line.startswith('#EXTINF:'):
-                  # Preserve all original attributes including logo
+                  # Check if group-title exists
                   if 'group-title=' not in line:
                       # Add group-title="VOD" while preserving everything else
                       if '#EXTINF:-1 ' in line:
@@ -341,10 +291,13 @@ jobs:
           STATIC=$(grep -c '^#EXTINF:' "$OTHER_M3U" 2>/dev/null || echo 0)
           VOD=$(grep -c '^#EXTINF:.*group-title="VOD"' "$OUTPUT" 2>/dev/null || echo 0)
           TOTAL=$((TAMIL + STATIC + VOD))
-          echo "✅ main.m3u built with $TOTAL channels:"
-          echo "   🎯 Live Tamil (M3U): $TAMIL matched out of 29 target channels"
-          echo "   📦 Static (other.m3u): $STATIC"
-          echo "   🎬 VOD (tamilrepo-dev): $VOD"
+          
+          echo "✅ main.m3u built successfully!"
+          echo "   🎯 Live Tamil Channels: $TAMIL"
+          echo "   📦 Static Channels: $STATIC"
+          echo "   🎬 VOD Channels: $VOD"
+          echo "   📊 Total Channels: $TOTAL"
+          
           echo "tamil=$TAMIL" >> "$GITHUB_OUTPUT"
           echo "static=$STATIC" >> "$GITHUB_OUTPUT"
           echo "vod=${{ steps.download_vod.outputs.vod_count }}" >> "$GITHUB_OUTPUT"
