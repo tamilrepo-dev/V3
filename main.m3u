@@ -1,7 +1,7 @@
 #EXTM3U x-tvg-url="https://iptv-org.github.io/epg/guides/tamil.xml"
 # === LIVE TAMIL (M3U) ===
 #EXTINF:-1 tvg-id="3321" tvg-logo="https://jiotvimages.cdn.jio.com/dare_images/images/zbcatun.png" group-title="Tamil",Cartoon Network
-https://elitebeam.shop/Jtv/mpd.php?id=3321&token=AXQDcW
+https://elitebeam.shop/Jtv/mpd.php?id=3321&token=awUGoX
 
 # === STATIC CHANNELS (from .github/workflows/other.m3u) ===
 =============================================== 24*7 ===============================================
