@@ -1,7 +1,117 @@
 #EXTM3U x-tvg-url="https://iptv-org.github.io/epg/guides/tamil.xml"
 # === LIVE TAMIL (M3U) ===
-#EXTINF:-1 tvg-id="3321" tvg-logo="https://jiotvimages.cdn.jio.com/dare_images/images/zbcatun.png" group-title="Tamil",Cartoon Network
-https://elitebeam.shop/Jtv/mpd.php?id=3321&token=awUGoX
+#EXTINF:-1 tvg-id="History_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/History_HD.png" group-title="Tamil",History HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=146
+#EXTINF:-1 tvg-id="Cartoon_Network_Telugu" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Cartoon_Network_Telugu.png" group-title="Tamil",Cartoon Network
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=166
+#EXTINF:-1 tvg-id="sonic_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/sonic_Tamil.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=290
+#EXTINF:-1 tvg-id="J_Movies" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/J_Movies.png" group-title="Tamil",J Movies
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=417
+#EXTINF:-1 tvg-id="Jaya_Plus" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Jaya_Plus.png" group-title="Tamil",Jaya Plus
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=418
+#EXTINF:-1 tvg-id="Jaya_TV_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Jaya_TV_HD.png" group-title="Tamil",Jaya TV HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=419
+#EXTINF:-1 tvg-id="Jaya_Max" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Jaya_Max.png" group-title="Tamil",Jaya Max
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=420
+#EXTINF:-1 tvg-id="Colors_Tamil_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Colors_Tamil_HD.png" group-title="Tamil",Colors Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=429
+#EXTINF:-1 tvg-id="Pogo_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Pogo_Tamil.png" group-title="Tamil",Pogo
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=542
+#EXTINF:-1 tvg-id="Nick_Telugu" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Telugu.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=543
+#EXTINF:-1 tvg-id="Nick_Junior" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Junior.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=544
+#EXTINF:-1 tvg-id="Nick_Hindi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Hindi.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=545
+#EXTINF:-1 tvg-id="Nick_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Tamil.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=546
+#EXTINF:-1 tvg-id="Nickelodeon_Jr" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nickelodeon_Jr.png" group-title="Tamil",Nickelodeon Jr.
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=548
+#EXTINF:-1 tvg-id="Discovery_Kids_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Discovery_Kids_Tamil.png" group-title="Tamil",Discovery Kids Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=550
+#EXTINF:-1 tvg-id="Discovery_Kids_2" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Discovery_Kids_2.png" group-title="Tamil",Discovery Kids Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=554
+#EXTINF:-1 tvg-id="Pogo_Hindi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Pogo_Hindi.png" group-title="Tamil",Pogo
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=559
+#EXTINF:-1 tvg-id="Discovery_Channel_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Discovery_Channel_Tamil.png" group-title="Tamil",D Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=569
+#EXTINF:-1 tvg-id="History_18_Telugu" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/History_18_Telugu.png" group-title="Tamil",History HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=577
+#EXTINF:-1 tvg-id="History_18_Hindi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/History_18_Hindi.png" group-title="Tamil",History HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=578
+#EXTINF:-1 tvg-id="History_18_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/History_18_Tamil.png" group-title="Tamil",D Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=579
+#EXTINF:-1 tvg-id="Polimer_News" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Polimer_News.png" group-title="Tamil",Polimer TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=636
+#EXTINF:-1 tvg-id="Sun_Life" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sun_Life.png" group-title="Tamil",Sun Life
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=682
+#EXTINF:-1 tvg-id="Polimer_TV" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Polimer_TV.png" group-title="Tamil",Polimer TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=705
+#EXTINF:-1 tvg-id="Raj_TV" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Raj_TV.png" group-title="Tamil",Raj TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=707
+#EXTINF:-1 tvg-id="Adithya_TV" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Adithya_TV.png" group-title="Tamil",Adithya TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=709
+#EXTINF:-1 tvg-id="Vasanth_TV" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Vasanth_TV.png" group-title="Tamil",Vasanth TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=727
+#EXTINF:-1 tvg-id="sonic_Hindi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/sonic_Hindi.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=815
+#EXTINF:-1 tvg-id="Cartoon_Network_Hindi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Cartoon_Network_Hindi.png" group-title="Tamil",Cartoon Network
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=816
+#EXTINF:-1 tvg-id="Cartoon_Network_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Cartoon_Network_Tamil.png" group-title="Tamil",Cartoon Network
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=817
+#EXTINF:-1 tvg-id="KTV_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/KTV_HD.png" group-title="Tamil",KTV HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=894
+#EXTINF:-1 tvg-id="Sun_Music_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sun_Music_HD.png" group-title="Tamil",Sun Music HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=895
+#EXTINF:-1 tvg-id="Sun_TV_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sun_TV_HD.png" group-title="Tamil",Sun TV HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=896
+#EXTINF:-1 tvg-id="CN_HD_English" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/CN_HD_English.png" group-title="Tamil",CN HD+ Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1079
+#EXTINF:-1 tvg-id="CN_HD_Telugu" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/CN_HD_Telugu.png" group-title="Tamil",CN HD+ Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1080
+#EXTINF:-1 tvg-id="CN_HD_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/CN_HD_Tamil.png" group-title="Tamil",CN HD+ Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1081
+#EXTINF:-1 tvg-id="Kalaignar_TV" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Kalaignar_TV.png" group-title="Tamil",Kalaignar TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1209
+#EXTINF:-1 tvg-id="Kalaignar_Seithigal_" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Kalaignar_Seithigal_.png" group-title="Tamil",Kalaignar TV
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1210
+#EXTINF:-1 tvg-id="Animal_Planet_Tam_HD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Animal_Planet_Tam_HD.png" group-title="Tamil",D Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1219
+#EXTINF:-1 tvg-id="Nick_HD_Plus" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_HD_Plus.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1226
+#EXTINF:-1 tvg-id="Sonic_Telugu" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sonic_Telugu.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1242
+#EXTINF:-1 tvg-id="Sonic_Kannada" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sonic_Kannada.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1243
+#EXTINF:-1 tvg-id="Nick_Kannada" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Kannada.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1244
+#EXTINF:-1 tvg-id="Nick_Malayalam" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Malayalam.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1340
+#EXTINF:-1 tvg-id="Nick_Bangla" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Bangla.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1341
+#EXTINF:-1 tvg-id="Nick_Marathi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Nick_Marathi.png" group-title="Tamil",Nick Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1342
+#EXTINF:-1 tvg-id="Sonic_Malayalam" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sonic_Malayalam.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1344
+#EXTINF:-1 tvg-id="Sonic_Bangla" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sonic_Bangla.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1345
+#EXTINF:-1 tvg-id="Sonic_Marathi" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Sonic_Marathi.png" group-title="Tamil",Sonic Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1346
+#EXTINF:-1 tvg-id="Colors_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Colors_Tamil.png" group-title="Tamil",Colors Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1371
+#EXTINF:-1 tvg-id="History_TV18_SD" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/History_TV18_SD.png" group-title="Tamil",History HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1471
+#EXTINF:-1 tvg-id="Ten_4_HD_Tamil" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Ten_4_HD_Tamil.png" group-title="Tamil",D Tamil
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1772
+#EXTINF:-1 tvg-id="Pogo_Telugu" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/Pogo_Telugu.png" group-title="Tamil",Pogo
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=1883
+#EXTINF:-1 tvg-id="NKTV_Live" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/NKTV_Live.png" group-title="Tamil",KTV HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=3109
+#EXTINF:-1 tvg-id="KTV_Gujarati" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/KTV_Gujarati.png" group-title="Tamil",KTV HD
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=3202
+#EXTINF:-1 tvg-id="zbcatun" tvg-logo="https://jiotv.catchup.cdn.jio.com/dare_images/images/zbcatun.png" group-title="Tamil",Cartoon Network
+https://jioplaylist.joinus-apiworker.workers.dev/live.m3u8?id=3321
 
 # === STATIC CHANNELS (from .github/workflows/other.m3u) ===
 =============================================== 24*7 ===============================================
