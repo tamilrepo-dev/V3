@@ -85,7 +85,7 @@ jobs:
           # 2️⃣ Fetch & inject live Tamil channels from M3U
           echo "# === LIVE TAMIL (M3U) ===" >> "$OUTPUT"
 
-          M3U_URL="https://kliv.fun/jio-plus"
+          M3U_URL="https://jioplaylist.joinus-apiworker.workers.dev/playlist.m3u"
 
           echo "📡 Fetching live channel M3U from $M3U_URL"
           M3U_RAW=""
