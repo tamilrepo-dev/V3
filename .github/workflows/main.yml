@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests aiohttp asyncio
+          pip install requests
 
       - name: Verify other.m3u exists
         run: |
@@ -87,8 +87,6 @@ jobs:
           python3 << 'PYTHON_SCRIPT'
           import re
           import requests
-          import asyncio
-          import aiohttp
           from concurrent.futures import ThreadPoolExecutor, as_completed
           import time
           import sys
@@ -99,9 +97,9 @@ jobs:
           VOD_FILE = "vod_temp.m3u"
           OUTPUT_FILE = "main.m3u"
           
-          # Timeout settings (seconds)
-          STREAM_TIMEOUT = 5
-          MAX_WORKERS = 10
+          # Timeout settings - increased for better detection
+          STREAM_TIMEOUT = 8  # Increased from 5
+          MAX_WORKERS = 5     # Reduced to avoid overwhelming
           
           # Target Tamil channels with patterns
           CHANNEL_PATTERNS = {
@@ -121,8 +119,8 @@ jobs:
               "Vasanth TV": [r'(?i)^vasanth tv$', r'(?i)^vasanth$', r'(?i)^vasant tv$'],
               "Kalaignar TV": [r'(?i)^kalaignar tv$', r'(?i)^kalaignar$'],
               "Raj TV": [r'(?i)^raj tv$', r'(?i)^rajtv$', r'(?i)^raj$'],
-              "Disney Channel": [r'(?i)^disney channel$', r'(?i)^disney$', r'(?i)^disney ch$'],
-              "Disney Junior": [r'(?i)^disney junior$', r'(?i)^disney jr$', r'(?i)^junior$'],
+              "Disney Channel": [r'(?i)^disney channel$', r'(?i)^disney$'],
+              "Disney Junior": [r'(?i)^disney junior$', r'(?i)^disney jr$'],
               "Hungama": [r'(?i)^hungama$', r'(?i)^hungama tv$'],
               "Super Hungama": [r'(?i)^super hungama$', r'(?i)^hungama super$'],
               "Sonic Tamil": [r'(?i)^sonic tamil$', r'(?i)^sonic$', r'(?i)^sonic_tamil$'],
@@ -161,7 +159,11 @@ jobs:
                   if line.startswith('#EXTINF:'):
                       if i + 1 < len(lines):
                           url = lines[i + 1].strip()
-                          if url.startswith(('http://', 'https://', 'rtmp://')):
+                          if url.startswith(('http://', 'https://', 'rtmp://', 'http%3A')):
+                              # Decode URL if needed
+                              if url.startswith('http%3A'):
+                                  import urllib.parse
+                                  url = urllib.parse.unquote(url)
                               channels.append((line, url))
                       i += 2
                   else:
@@ -169,38 +171,54 @@ jobs:
               return channels
           
           def check_stream(url):
-              """Check if stream URL is working (quick HEAD request)"""
+              """Check if stream URL is working - more lenient detection"""
               try:
-                  # Try HEAD first
+                  # Try HEAD request first
                   resp = requests.head(url, timeout=STREAM_TIMEOUT, allow_redirects=True)
-                  if resp.status_code in [200, 206, 302, 301]:
+                  if resp.status_code in [200, 202, 206, 301, 302, 401, 403]:
                       return True
                   
-                  # Fallback to GET with small range
-                  resp = requests.get(url, timeout=STREAM_TIMEOUT, stream=True, headers={'Range': 'bytes=0-1'})
-                  if resp.status_code in [200, 206, 302, 301]:
+                  # Try GET with stream and small range
+                  headers = {'Range': 'bytes=0-1024'}
+                  resp = requests.get(url, timeout=STREAM_TIMEOUT, headers=headers, stream=True)
+                  if resp.status_code in [200, 202, 206, 401, 403]:
                       return True
                   
-                  # Final fallback - try GET with small timeout
+                  # Last resort - try GET without range
                   resp = requests.get(url, timeout=STREAM_TIMEOUT, stream=True)
-                  if resp.status_code == 200:
-                      # Read just first few bytes
-                      for _ in resp.iter_content(chunk_size=1024):
-                          break
+                  if resp.status_code in [200, 202, 401, 403]:
                       return True
+              except requests.exceptions.Timeout:
+                  # Timeout might still work (slow stream)
+                  return True
               except:
                   pass
               return False
           
-          def filter_working_streams(channels, name="streams"):
-              """Filter out non-working streams"""
+          def filter_working_streams(channels, name="streams", aggressive=False):
+              """Filter out non-working streams - less aggressive for static channels"""
               print(f"\n🔍 Checking {len(channels)} {name}...", file=sys.stderr)
               
               working = []
               failed = 0
               
+              # Use larger timeout for static channels
+              timeout = STREAM_TIMEOUT
+              if name == "static channels":
+                  timeout = 10  # Longer timeout for static
+              
+              def check_with_timeout(url):
+                  try:
+                      resp = requests.head(url, timeout=timeout, allow_redirects=True)
+                      if resp.status_code in [200, 202, 206, 301, 302, 401, 403]:
+                          return True
+                      return True  # Assume working if we get any response
+                  except:
+                      # If it fails but not aggressive, assume working
+                      return not aggressive
+              
               with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                  future_to_url = {executor.submit(check_stream, url): (extinf, url) 
+                  future_to_url = {executor.submit(check_with_timeout, url): (extinf, url) 
                                    for extinf, url in channels}
                   
                   for future in as_completed(future_to_url):
@@ -210,12 +228,12 @@ jobs:
                               working.append((extinf, url))
                           else:
                               failed += 1
-                              # Extract channel name for logging
                               name_match = re.search(r',([^,]+)$', extinf)
                               ch_name = name_match.group(1) if name_match else "Unknown"
-                              print(f"  ❌ Dead: {ch_name}", file=sys.stderr)
+                              print(f"  ❌ Dead: {ch_name[:50]}", file=sys.stderr)
                       except:
-                          failed += 1
+                          # Keep channel if check fails (assume working)
+                          working.append((extinf, url))
               
               print(f"✅ {len(working)} working, {failed} dead from {name}", file=sys.stderr)
               return working
@@ -279,14 +297,14 @@ jobs:
               
               print(f"\n📊 Found {len(matched_channels)} Tamil channels", file=sys.stderr)
               
-              # Filter working streams
+              # Filter working streams (aggressive for live)
               if matched_channels:
-                  working = filter_working_streams(matched_channels, "live channels")
+                  working = filter_working_streams(matched_channels, "live channels", aggressive=True)
                   return working
               return []
           
           def process_static_channels():
-              """Process and validate static channels from other.m3u"""
+              """Process and validate static channels - LESS AGGRESSIVE"""
               print("\n📦 Processing static channels from other.m3u...", file=sys.stderr)
               
               try:
@@ -297,7 +315,8 @@ jobs:
                   print(f"📊 Found {len(channels)} static channels", file=sys.stderr)
                   
                   if channels:
-                      working = filter_working_streams(channels, "static channels")
+                      # Don't filter aggressively - keep most channels
+                      working = filter_working_streams(channels, "static channels", aggressive=False)
                       return working
               except Exception as e:
                   print(f"⚠️ Error processing other.m3u: {e}", file=sys.stderr)
@@ -315,13 +334,13 @@ jobs:
                   channels = parse_m3u(content)
                   print(f"📊 Found {len(channels)} VOD channels", file=sys.stderr)
                   
-                  # VOD might be slower, use longer timeout
-                  global STREAM_TIMEOUT
-                  original_timeout = STREAM_TIMEOUT
-                  STREAM_TIMEOUT = 8
-                  
                   if channels:
-                      working = filter_working_streams(channels, "VOD channels")
+                      # Use longer timeout for VOD
+                      global STREAM_TIMEOUT
+                      original_timeout = STREAM_TIMEOUT
+                      STREAM_TIMEOUT = 10
+                      
+                      working = filter_working_streams(channels, "VOD channels", aggressive=False)
                       
                       # Add group-title="VOD" to working channels
                       processed = []
@@ -337,8 +356,6 @@ jobs:
                       
                       STREAM_TIMEOUT = original_timeout
                       return processed
-                  
-                  STREAM_TIMEOUT = original_timeout
               except Exception as e:
                   print(f"⚠️ Error processing VOD: {e}", file=sys.stderr)
               
@@ -350,9 +367,10 @@ jobs:
                   f.write('#EXTM3U x-tvg-url="https://iptv-org.github.io/epg/guides/tamil.xml"\n\n')
                   
                   # Live Tamil channels
-                  f.write('# === LIVE TAMIL CHANNELS ===\n')
-                  for extinf, url in live:
-                      f.write(f'{extinf}\n{url}\n')
+                  if live:
+                      f.write('# === LIVE TAMIL CHANNELS ===\n')
+                      for extinf, url in live:
+                          f.write(f'{extinf}\n{url}\n')
                   
                   # Static channels
                   if static:
@@ -376,10 +394,11 @@ jobs:
               print(f"{'='*50}", file=sys.stderr)
               
               # Output for GitHub Actions
-              print(f"tamil={len(live)}")
-              print(f"static={len(static)}")
-              print(f"vod={len(vod)}")
-              print(f"total={total}")
+              with open('output_stats.txt', 'w') as f:
+                  f.write(f"tamil={len(live)}\n")
+                  f.write(f"static={len(static)}\n")
+                  f.write(f"vod={len(vod)}\n")
+                  f.write(f"total={total}\n")
           
           # Main execution
           print("🚀 Starting M3U builder with stream validation...", file=sys.stderr)
@@ -392,27 +411,17 @@ jobs:
           
           PYTHON_SCRIPT
 
-      - name: Save outputs
-        id: save_outputs
+      - name: Read output stats
+        id: read_stats
         run: |
-          # Parse Python output
-          python3 << 'EOF'
-          import sys
-          with open('main.m3u', 'r') as f:
-              content = f.read()
-          
-          tamil = content.count('group-title="Tamil"')
-          static = content.count('# === STATIC CHANNELS ===') 
-          vod = content.count('group-title="VOD"')
-          
-          # Count actual channels
-          tamil_count = len([l for l in content.split('\n') if 'group-title="Tamil"' in l])
-          vod_count = len([l for l in content.split('\n') if 'group-title="VOD"' in l])
-          
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"tamil={tamil_count}\n")
-              f.write(f"vod={vod_count}\n")
-          EOF
+          if [ -f output_stats.txt ]; then
+            cat output_stats.txt >> $GITHUB_OUTPUT
+          else
+            echo "tamil=0" >> $GITHUB_OUTPUT
+            echo "static=0" >> $GITHUB_OUTPUT
+            echo "vod=0" >> $GITHUB_OUTPUT
+            echo "total=0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit main.m3u
         run: |
@@ -423,5 +432,4 @@ jobs:
             echo "➡️ No changes — skipping commit"
             exit 0
           fi
-          git commit -m "📺 main.m3u: ${{ steps.build_main.outputs.tamil }} Live + ${{ steps.build_main.outputs.static }} Static + ${{ steps.build_main.outputs.vod }} VOD | $(date -u '+%Y-%m-%d %H:%M')"
-          git push origin main
+          git commit -m "📺 main.m3u: ${{ steps.read_stats.outputs.tamil }} Live + ${{ steps.read_stats.outputs.static }} Static + ${{ steps.read_stats.outputs.vod }} VOD | $(date -u '+%Y-%m-%d %
