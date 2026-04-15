@@ -627,6 +627,26 @@ https://streams2.sofast.tv/ptnr-yupptv/title-THALAA-TV-TAM_yupptv/v1/master/611d
 https://player.mslivestream.net/mslive/9fe7c84b8253e88099d47237e0b7367c.sdp/playlist.m3u8
 
 # === VOD (from tamilrepo-dev/VOD) ===
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/adk8weka3O5648g3de4z3y4aE7G.jpg" group-title="VOD", Thrash (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151190.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/bqWFBD56BvBGGgTvj3maU9fyGbX.jpg" group-title="VOD", S. Saraswathi (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151189.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/iKmykghTmvQj6zum79TsdUL5mPF.jpg" group-title="VOD", The Call (2020) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151181.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/mAX1ujOROXtKsOuIg5MbJbotOyD.jpg" group-title="VOD", TN 2026 (2026) (Tamil) (CAM)
+http://filex.me:80//movie/71626281/162627271/1151180.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/zJNjifeZPORikyKepyKmflgbbfJ.jpg" group-title="VOD", Phobia (2016) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151173.mp4
+#EXTINF:-1 tvg-logo="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUBRxRYNFY-10v6V3SszSu9PKNPaBOGsl3MA&s" group-title="VOD", Guest (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151119.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/vmp45llJTRr6JLaIamt3RlfxgTH.jpg" group-title="VOD", Untold: Jail Blazers (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151118.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/1JGkVOvJZEwVOHzmdRvkc7dPI6r.jpg" group-title="VOD", Toh, Ti Ani Fuji (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151117.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/lZv2p2wWfRi6ffNayXpPlm56DH8.jpg" group-title="VOD", Iravin Vizhigal (2025) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151108.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/4ASKGsPMbzChx0YX5Pqc9HFXQm3.jpg" group-title="VOD", Sambhavam Adhyayam Onnu (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151107.mp4
 #EXTINF:-1 tvg-logo="https://static.moviecrow.com/gallery/20260409/255937-Guest%20Sakshi%20Agarwal%20Vidhu%20Balaji%20Director%20Ranga%20Bhuvaneswar%20Chapter%202%20Music%20AK%20Tariq.jpg" group-title="VOD", Guest (2026) Tamil Audio
 http://filex.me:80//movie/71626281/162627271/1148715.mp4
 #EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/5bnBIP6brIVCOgQ6D4lIQ6CbUvs.jpg" group-title="VOD", Kadhal Kadhai Sollava (2026) Tamil Audio
@@ -2557,3 +2577,5 @@ http://filex.me:80//movie/71626281/162627271/903226.mkv
 http://filex.me:80//movie/71626281/162627271/903219.mkv
 #EXTINF:-1 tvg-logo="" group-title="VOD", Thakavi - 2021 _ Tamil
 http://filex.me:80//movie/71626281/162627271/903216.mkv
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/olQw61BotSq74LgpwQTn4qPYAk1.jpg" group-title="VOD", The Big Picture (1989) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151174.mp4
