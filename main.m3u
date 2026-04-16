@@ -627,6 +627,12 @@ https://streams2.sofast.tv/ptnr-yupptv/title-THALAA-TV-TAM_yupptv/v1/master/611d
 https://player.mslivestream.net/mslive/9fe7c84b8253e88099d47237e0b7367c.sdp/playlist.m3u8
 
 # === VOD (from tamilrepo-dev/VOD) ===
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/cbYyWHc1dL1bfwEJbaMYDYKgWG2.jpg" group-title="VOD", Toaster (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151229.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/xwvJ3WzdJ1OCuDoY8LAxBUlQyig.jpg" group-title="VOD", Balls Up (2026) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151228.mp4
+#EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/a0bODl3Ieix1qcGRLIx6PZvluzB.jpg" group-title="VOD", No Tears in Hell (2025) (Tamil)
+http://filex.me:80//movie/71626281/162627271/1151215.mp4
 #EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/adk8weka3O5648g3de4z3y4aE7G.jpg" group-title="VOD", Thrash (2026) (Tamil)
 http://filex.me:80//movie/71626281/162627271/1151190.mp4
 #EXTINF:-1 tvg-logo="https://image.tmdb.org/t/p/w600_and_h900_bestv2/bqWFBD56BvBGGgTvj3maU9fyGbX.jpg" group-title="VOD", S. Saraswathi (2026) (Tamil)
