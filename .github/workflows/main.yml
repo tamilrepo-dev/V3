@@ -72,17 +72,17 @@ jobs:
           echo "✅ vod.m3u loaded — $COUNT channel(s)"
           echo "vod_count=$COUNT" >> "$GITHUB_OUTPUT"
 
-      - name: Build main.m3u (Live Tamil M3U + other.m3u + VOD)
+      - name: Build main.m3u
         id: build_main
         run: |
           OUTPUT="main.m3u"
           OTHER_M3U=".github/workflows/other.m3u"
           VOD_FILE="vod_temp.m3u"
 
-          # 1️⃣ Header
+          # Header
           echo "#EXTM3U x-tvg-url=\"https://iptv-org.github.io/epg/guides/tamil.xml\"" > "$OUTPUT"
 
-          # 2️⃣ Fetch & inject live Tamil channels from M3U (supports HTML or direct M3U)
+          # Live Tamil channels section
           echo "# === LIVE TAMIL (M3U) ===" >> "$OUTPUT"
 
           M3U_URL="https://allinonereborn.online/m3u/jtv145.m3u"
@@ -103,11 +103,11 @@ jobs:
             exit 1
           fi
 
-          # Save raw response for processing
+          # Save raw response
           echo "$M3U_RAW" > raw_response.txt
 
-          # Extract M3U content (handles both direct M3U and HTML with embedded M3U)
-          python3 << 'PYTHON_EXTRACT'
+          # Extract M3U using Python
+          python3 -c "
 import re
 import sys
 
@@ -116,11 +116,10 @@ with open('raw_response.txt', 'r', encoding='utf-8', errors='ignore') as f:
 
 # Check if it's HTML
 if raw_content.strip().startswith('<'):
-    print("⚠️ Received HTML, attempting to extract M3U...", file=sys.stderr)
+    print('⚠️ Received HTML, attempting to extract M3U...', file=sys.stderr)
     
-    # Look for M3U content in HTML
-    # Pattern 1: Look for #EXTM3U in the HTML
-    m3u_pattern = r'(#EXTM3U.*?)(?=</(?:pre|code|div|body)>|$)'
+    # Look for M3U content
+    m3u_pattern = r'(#EXTM3U.*?)(?=</(?:pre|code|div|body)>|\$)'
     match = re.search(m3u_pattern, raw_content, re.DOTALL | re.IGNORECASE)
     
     if match:
@@ -129,137 +128,91 @@ if raw_content.strip().startswith('<'):
         extracted = re.sub(r'&lt;', '<', extracted)
         extracted = re.sub(r'&gt;', '>', extracted)
         extracted = re.sub(r'&amp;', '&', extracted)
-        extracted = re.sub(r'&quot;', '"', extracted)
+        extracted = re.sub(r'&quot;', '\"', extracted)
         with open('extracted_m3u.txt', 'w', encoding='utf-8') as out:
             out.write(extracted)
-        print("✅ Extracted M3U from HTML", file=sys.stderr)
+        print('✅ Extracted M3U from HTML', file=sys.stderr)
         sys.exit(0)
     
-    # Pattern 2: Look for M3U URLs in the HTML
-    url_pattern = r'https?://[^\s<>"\']+\.m3u[^\s<>"\']*'
+    # Look for M3U URLs
+    url_pattern = r'https?://[^\s<>\"']+\.m3u[^\s<>\"']*'
     m3u_urls = re.findall(url_pattern, raw_content)
     
     if m3u_urls:
-        print(f"📎 Found M3U URLs in HTML: {m3u_urls[0]}", file=sys.stderr)
+        print(f'📎 Found M3U URL: {m3u_urls[0]}', file=sys.stderr)
         with open('extracted_url.txt', 'w', encoding='utf-8') as out:
             out.write(m3u_urls[0])
         sys.exit(0)
     
-    print("❌ No M3U content or URLs found in HTML", file=sys.stderr)
+    print('❌ No M3U content or URLs found', file=sys.stderr)
     sys.exit(1)
 else:
     # Direct M3U content
     with open('extracted_m3u.txt', 'w', encoding='utf-8') as out:
         out.write(raw_content)
-    print("✅ Direct M3U content received", file=sys.stderr)
+    print('✅ Direct M3U content received', file=sys.stderr)
     sys.exit(0)
-PYTHON_EXTRACT
+"
 
-          EXTRACT_STATUS=$?
-          
-          if [ $EXTRACT_STATUS -ne 0 ]; then
-              echo "❌ Failed to extract M3U content"
-              exit 1
+          if [ $? -ne 0 ]; then
+            echo "❌ Failed to extract M3U content"
+            exit 1
           fi
           
           TEMP_M3U="temp_live.m3u"
           
-          # Check if we have an extracted URL to fetch
+          # Handle extracted URL or content
           if [ -f extracted_url.txt ]; then
-              M3U_URL2=$(cat extracted_url.txt)
-              echo "📥 Fetching M3U from extracted URL: $M3U_URL2"
-              
-              for i in {1..3}; do
-                if curl -sfL --max-time 25 \
-                  -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
-                  -o "$TEMP_M3U" "$M3U_URL2"; then
-                  echo "✅ Downloaded M3U from extracted URL"
-                  break
-                else
-                  echo "⚠️ Attempt $i failed to fetch extracted URL"
-                  sleep 2
-                fi
-                if [ $i -eq 3 ]; then
-                  echo "❌ Failed to fetch M3U from extracted URL"
-                  exit 1
-                fi
-              done
-              rm -f extracted_url.txt
+            M3U_URL2=$(cat extracted_url.txt)
+            echo "📥 Fetching M3U from extracted URL: $M3U_URL2"
+            curl -sfL --max-time 25 -o "$TEMP_M3U" "$M3U_URL2"
+            rm -f extracted_url.txt
           elif [ -f extracted_m3u.txt ]; then
-              mv extracted_m3u.txt "$TEMP_M3U"
+            mv extracted_m3u.txt "$TEMP_M3U"
           else
-              echo "❌ No extracted content found"
-              exit 1
+            echo "❌ No extracted content found"
+            exit 1
           fi
           
           rm -f raw_response.txt
           
-          # Verify we have valid M3U content
-          if [ ! -f "$TEMP_M3U" ] || [ ! -s "$TEMP_M3U" ]; then
-              echo "❌ No valid M3U content obtained"
-              exit 1
-          fi
-          
-          # Check if it's actually M3U format
-          if ! grep -q "^#EXTM3U" "$TEMP_M3U"; then
-              echo "⚠️ Warning: Downloaded file doesn't start with #EXTM3U"
-              echo "First 500 chars:"
-              head -c 500 "$TEMP_M3U"
-              echo ""
-              # Try to find M3U content anyway
-              if grep -q "#EXTINF:" "$TEMP_M3U"; then
-                  echo "✅ Found #EXTINF lines, continuing anyway"
-              else
-                  echo "❌ No M3U format detected"
-                  exit 1
-              fi
-          fi
-
-          # Process M3U with exact matching and preserve logos
-          python3 << 'PYTHON_SCRIPT'
+          # Process M3U and match channels
+          python3 -c "
 import re
-import sys
 
-# Read the temp M3U file
-try:
-    with open('temp_live.m3u', 'r', encoding='utf-8', errors='ignore') as f:
-        lines = f.readlines()
-except:
-    print("❌ Failed to read temp_live.m3u", file=sys.stderr)
-    sys.exit(1)
+with open('temp_live.m3u', 'r', encoding='utf-8', errors='ignore') as f:
+    lines = f.readlines()
 
-# Target channels with exact match patterns (case insensitive)
-# Format: "Display Name" -> [pattern1, pattern2, ...]
 channel_patterns = {
-    "Sun TV HD": [r'(?i)^sun tv hd$', r'(?i)^sun tv$', r'(?i)^sunhd$'],
-    "Sun Music HD": [r'(?i)^sun music hd$', r'(?i)^sun music$', r'(?i)^sunmusic$'],
-    "Sun Life": [r'(?i)^sun life$', r'(?i)^sunlife$'],
-    "Adithya TV": [r'(?i)^adithya tv$', r'(?i)^adithya$', r'(?i)^aditya tv$'],
-    "KTV HD": [r'(?i)^ktv hd$', r'(?i)^ktv$'],
-    "Star Vijay HD": [r'(?i)^star vijay hd$', r'(?i)^vijay hd$', r'(?i)^star vijay$', r'(?i)^vijay tv$', r'(?i)^vijay$'],
-    "Vijay Super HD": [r'(?i)^vijay super hd$', r'(?i)^vijay super$', r'(?i)^super vijay$'],
-    "Colors Tamil": [r'(?i)^colors tamil$', r'(?i)^colour tamil$', r'(?i)^colors$'],
-    "Jaya TV HD": [r'(?i)^jaya tv hd$', r'(?i)^jaya tv$', r'(?i)^jayahd$'],
-    "Jaya Plus": [r'(?i)^jaya plus$', r'(?i)^jayaplus$'],
-    "Jaya Max": [r'(?i)^jaya max$', r'(?i)^jayamax$'],
-    "J Movies": [r'(?i)^j movies$', r'(?i)^jmovies$', r'(?i)^j movie$'],
-    "Polimer TV": [r'(?i)^polimer tv$', r'(?i)^polimer$'],
-    "Vasanth TV": [r'(?i)^vasanth tv$', r'(?i)^vasanth$', r'(?i)^vasant tv$'],
-    "Kalaignar TV": [r'(?i)^kalaignar tv$', r'(?i)^kalaignar$'],
-    "Raj TV": [r'(?i)^raj tv$', r'(?i)^rajtv$', r'(?i)^raj$'],
-    "Disney Channel": [r'(?i)^disney channel$', r'(?i)^disney$', r'(?i)^disney ch$'],
-    "Disney Junior": [r'(?i)^disney junior$', r'(?i)^disney jr$', r'(?i)^junior$'],
-    "Hungama": [r'(?i)^hungama$', r'(?i)^hungama tv$'],
-    "Super Hungama": [r'(?i)^super hungama$', r'(?i)^hungama super$'],
-    "Sonic Tamil": [r'(?i)^sonic tamil$', r'(?i)^sonic$', r'(?i)^sonic tv$'],
-    "Nick Tamil": [r'(?i)^nick tamil$', r'(?i)^nick$', r'(?i)^nick tv$'],
-    "Nickelodeon Jr.": [r'(?i)^nickelodeon jr$', r'(?i)^nick jr$', r'(?i)^nickelodeon junior$'],
-    "Pogo": [r'(?i)^pogo$', r'(?i)^pogo tv$'],
-    "Cartoon Network": [r'(?i)^cartoon network$', r'(?i)^cn$', r'(?i)^cartoon$'],
-    "CN HD+ Tamil": [r'(?i)^cn hd\+ tamil$', r'(?i)^cn hd$', r'(?i)^cn\+$'],
-    "Discovery Kids Tamil": [r'(?i)^discovery kids tamil$', r'(?i)^discovery kids$', r'(?i)^kids discovery$'],
-    "D Tamil": [r'(?i)^d tamil$', r'(?i)^dtamil$', r'(?i)^d tv$'],
-    "History HD": [r'(?i)^history hd$', r'(?i)^history$', r'(?i)^history tv18$']
+    'Sun TV HD': [r'(?i)^sun tv hd$', r'(?i)^sun tv$', r'(?i)^sunhd$'],
+    'Sun Music HD': [r'(?i)^sun music hd$', r'(?i)^sun music$', r'(?i)^sunmusic$'],
+    'Sun Life': [r'(?i)^sun life$', r'(?i)^sunlife$'],
+    'Adithya TV': [r'(?i)^adithya tv$', r'(?i)^adithya$', r'(?i)^aditya tv$'],
+    'KTV HD': [r'(?i)^ktv hd$', r'(?i)^ktv$'],
+    'Star Vijay HD': [r'(?i)^star vijay hd$', r'(?i)^vijay hd$', r'(?i)^star vijay$', r'(?i)^vijay tv$', r'(?i)^vijay$'],
+    'Vijay Super HD': [r'(?i)^vijay super hd$', r'(?i)^vijay super$', r'(?i)^super vijay$'],
+    'Colors Tamil': [r'(?i)^colors tamil$', r'(?i)^colour tamil$', r'(?i)^colors$'],
+    'Jaya TV HD': [r'(?i)^jaya tv hd$', r'(?i)^jaya tv$', r'(?i)^jayahd$'],
+    'Jaya Plus': [r'(?i)^jaya plus$', r'(?i)^jayaplus$'],
+    'Jaya Max': [r'(?i)^jaya max$', r'(?i)^jayamax$'],
+    'J Movies': [r'(?i)^j movies$', r'(?i)^jmovies$', r'(?i)^j movie$'],
+    'Polimer TV': [r'(?i)^polimer tv$', r'(?i)^polimer$'],
+    'Vasanth TV': [r'(?i)^vasanth tv$', r'(?i)^vasanth$', r'(?i)^vasant tv$'],
+    'Kalaignar TV': [r'(?i)^kalaignar tv$', r'(?i)^kalaignar$'],
+    'Raj TV': [r'(?i)^raj tv$', r'(?i)^rajtv$', r'(?i)^raj$'],
+    'Disney Channel': [r'(?i)^disney channel$', r'(?i)^disney$', r'(?i)^disney ch$'],
+    'Disney Junior': [r'(?i)^disney junior$', r'(?i)^disney jr$', r'(?i)^junior$'],
+    'Hungama': [r'(?i)^hungama$', r'(?i)^hungama tv$'],
+    'Super Hungama': [r'(?i)^super hungama$', r'(?i)^hungama super$'],
+    'Sonic Tamil': [r'(?i)^sonic tamil$', r'(?i)^sonic$', r'(?i)^sonic tv$'],
+    'Nick Tamil': [r'(?i)^nick tamil$', r'(?i)^nick$', r'(?i)^nick tv$'],
+    'Nickelodeon Jr.': [r'(?i)^nickelodeon jr$', r'(?i)^nick jr$', r'(?i)^nickelodeon junior$'],
+    'Pogo': [r'(?i)^pogo$', r'(?i)^pogo tv$'],
+    'Cartoon Network': [r'(?i)^cartoon network$', r'(?i)^cn$', r'(?i)^cartoon$'],
+    'CN HD+ Tamil': [r'(?i)^cn hd\+ tamil$', r'(?i)^cn hd$', r'(?i)^cn\+$'],
+    'Discovery Kids Tamil': [r'(?i)^discovery kids tamil$', r'(?i)^discovery kids$', r'(?i)^kids discovery$'],
+    'D Tamil': [r'(?i)^d tamil$', r'(?i)^dtamil$', r'(?i)^d tv$'],
+    'History HD': [r'(?i)^history hd$', r'(?i)^history$', r'(?i)^history tv18$']
 }
 
 matched_channels = []
@@ -269,13 +222,9 @@ i = 0
 while i < len(lines):
     line = lines[i].strip()
     if line.startswith('#EXTINF:'):
-        # Extract channel name from the line
-        # Look for pattern: ,ChannelName at the end
         match = re.search(r',([^,]+)$', line)
         if match:
             channel_name = match.group(1).strip()
-            
-            # Check if this channel matches any target pattern
             matched_display = None
             for display_name, patterns in channel_patterns.items():
                 for pattern in patterns:
@@ -285,72 +234,58 @@ while i < len(lines):
                 if matched_display:
                     break
             
-            # Only add if not already matched (prefer first occurrence)
             if matched_display and matched_display not in matched_names and i + 1 < len(lines):
                 url_line = lines[i + 1].strip()
                 if url_line.startswith(('http://', 'https://', 'rtmp://')):
-                    # Extract existing attributes
-                    tvg_id_match = re.search(r'tvg-id="([^"]*)"', line)
-                    tvg_name_match = re.search(r'tvg-name="([^"]*)"', line)
-                    tvg_logo_match = re.search(r'tvg-logo="([^"]*)"', line)
-                    tvg_url_match = re.search(r'tvg-url="([^"]*)"', line)
+                    tvg_id_match = re.search(r'tvg-id=\"([^\"]*)\"', line)
+                    tvg_name_match = re.search(r'tvg-name=\"([^\"]*)\"', line)
+                    tvg_logo_match = re.search(r'tvg-logo=\"([^\"]*)\"', line)
                     
-                    tvg_id = tvg_id_match.group(1) if tvg_id_match else ""
+                    tvg_id = tvg_id_match.group(1) if tvg_id_match else ''
                     tvg_name = tvg_name_match.group(1) if tvg_name_match else matched_display
-                    tvg_logo = tvg_logo_match.group(1) if tvg_logo_match else ""
-                    tvg_url = tvg_url_match.group(1) if tvg_url_match else ""
+                    tvg_logo = tvg_logo_match.group(1) if tvg_logo_match else ''
                     
-                    # Build new EXTINF line preserving all attributes
                     new_extinf = '#EXTINF:-1'
                     if tvg_id:
-                        new_extinf += f' tvg-id="{tvg_id}"'
+                        new_extinf += f' tvg-id=\"{tvg_id}\"'
                     if tvg_name:
-                        new_extinf += f' tvg-name="{tvg_name}"'
+                        new_extinf += f' tvg-name=\"{tvg_name}\"'
                     if tvg_logo:
-                        new_extinf += f' tvg-logo="{tvg_logo}"'
-                    if tvg_url:
-                        new_extinf += f' tvg-url="{tvg_url}"'
-                    new_extinf += f' group-title="Tamil",{matched_display}'
+                        new_extinf += f' tvg-logo=\"{tvg_logo}\"'
+                    new_extinf += f' group-title=\"Tamil\",{matched_display}'
                     
                     matched_channels.append((new_extinf, url_line))
                     matched_names.add(matched_display)
-                    print(f"✅ Matched: {channel_name} -> {matched_display}", file=sys.stderr)
         i += 2
     else:
         i += 1
 
-# Write matched channels to file
 with open('matched_channels.txt', 'w', encoding='utf-8') as f:
     for extinf, url in matched_channels:
         f.write(extinf + '\n')
         f.write(url + '\n')
 
-print(f"COUNT:{len(matched_channels)}", file=sys.stderr)
-print(f"MATCHED:{','.join(matched_names)}", file=sys.stderr)
-PYTHON_SCRIPT
+print(f'Matched {len(matched_channels)} channels')
+"
 
-          # Append matched channels to main.m3u
+          # Append matched channels
           if [ -f matched_channels.txt ]; then
             cat matched_channels.txt >> "$OUTPUT"
-            LIVE_COUNT=$(grep -c '^#EXTINF:' matched_channels.txt 2>/dev/null || echo 0)
-            echo "✅ Matched $LIVE_COUNT channels"
             rm -f matched_channels.txt
-          else
-            LIVE_COUNT=0
-            echo "⚠️ No channels matched"
           fi
 
           rm -f "$TEMP_M3U"
 
-          # 3️⃣ Append static channels (preserve their original logos and attributes)
+          # Append static channels
           echo "" >> "$OUTPUT"
-          echo "# === STATIC CHANNELS (from .github/workflows/other.m3u) ===" >> "$OUTPUT"
+          echo "# === STATIC CHANNELS ===" >> "$OUTPUT"
           grep -v '^#EXTM3U' "$OTHER_M3U" | grep -v '^$' >> "$OUTPUT"
 
-          # 4️⃣ Append VOD (preserve existing logos and attributes)
+          # Append VOD
           echo "" >> "$OUTPUT"
-          echo "# === VOD (from tamilrepo-dev/VOD) ===" >> "$OUTPUT"
-          python3 << 'PYTHON_VOD'
+          echo "# === VOD ===" >> "$OUTPUT"
+          
+          python3 -c "
 import re
 
 with open('vod_temp.m3u', 'r', encoding='utf-8', errors='ignore') as f:
@@ -361,18 +296,15 @@ i = 0
 while i < len(lines):
     line = lines[i].strip()
     if line.startswith('#EXTINF:'):
-        # Check if group-title exists
         if 'group-title=' not in line:
-            # Add group-title="VOD" while preserving everything else
             if '#EXTINF:-1 ' in line:
-                line = line.replace('#EXTINF:-1 ', '#EXTINF:-1 group-title="VOD" ')
+                line = line.replace('#EXTINF:-1 ', '#EXTINF:-1 group-title=\"VOD\" ')
             elif '#EXTINF:-1,' in line:
-                line = line.replace('#EXTINF:-1,', '#EXTINF:-1 group-title="VOD",')
+                line = line.replace('#EXTINF:-1,', '#EXTINF:-1 group-title=\"VOD\",')
             else:
-                line = line.replace('#EXTINF:', '#EXTINF: group-title="VOD" ')
+                line = line.replace('#EXTINF:', '#EXTINF: group-title=\"VOD\" ')
         else:
-            # Replace existing group-title with VOD
-            line = re.sub(r'group-title="[^"]*"', 'group-title="VOD"', line)
+            line = re.sub(r'group-title=\"[^\"]*\"', 'group-title=\"VOD\"', line)
         
         output_lines.append(line + '\n')
         if i + 1 < len(lines):
@@ -385,27 +317,20 @@ while i < len(lines):
 
 with open('vod_processed.txt', 'w', encoding='utf-8') as f:
     f.writelines(output_lines)
-PYTHON_VOD
+"
           
           cat vod_processed.txt >> "$OUTPUT"
           rm -f vod_processed.txt
 
-          # 5️⃣ Stats
+          # Stats
           TAMIL=$(grep -c '^#EXTINF:.*group-title="Tamil"' "$OUTPUT" 2>/dev/null || echo 0)
           STATIC=$(grep -c '^#EXTINF:' "$OTHER_M3U" 2>/dev/null || echo 0)
           VOD=$(grep -c '^#EXTINF:.*group-title="VOD"' "$OUTPUT" 2>/dev/null || echo 0)
-          TOTAL=$((TAMIL + STATIC + VOD))
           
-          echo "✅ main.m3u built successfully!"
-          echo "   🎯 Live Tamil Channels: $TAMIL"
-          echo "   📦 Static Channels: $STATIC"
-          echo "   🎬 VOD Channels: $VOD"
-          echo "   📊 Total Channels: $TOTAL"
-          
+          echo "✅ main.m3u built - Tamil: $TAMIL, Static: $STATIC, VOD: $VOD"
           echo "tamil=$TAMIL" >> "$GITHUB_OUTPUT"
           echo "static=$STATIC" >> "$GITHUB_OUTPUT"
           echo "vod=${{ steps.download_vod.outputs.vod_count }}" >> "$GITHUB_OUTPUT"
-          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
 
       - name: Commit main.m3u
         run: |
@@ -413,8 +338,8 @@ PYTHON_VOD
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add main.m3u
           if git diff --cached --quiet; then
-            echo "➡️ No changes — skipping commit"
+            echo "No changes — skipping commit"
             exit 0
           fi
-          git commit -m "📺 main.m3u: ${{ steps.build_main.outputs.tamil }} Live Tamil + ${{ steps.build_main.outputs.static }} Static + ${{ steps.build_main.outputs.vod }} VOD | $(date -u '+%Y-%m-%d %H:%M')"
+          git commit -m "Update main.m3u | $(date -u '+%Y-%m-%d %H:%M')"
           git push origin main
