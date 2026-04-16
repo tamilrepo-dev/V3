@@ -1,30 +1,5 @@
 #EXTM3U
 
-=============================================== 24*7 ===============================================
-
-=============================================== RASI ===============================================
-
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI TV
-https://rasinetworks.in/live/rasitvhd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI TAMIL
-https://rasinetworks.in/live/rasitamilhd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi", RASI MOVIES 
-https://rasinetworks.in/live/rasimovieshd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi", RASI CLASSIC
-https://rasinetworks.in/live/rasiclassichd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi", RASI HOLLYWOOD 
-https://rasinetworks.in/live/rasihollywoodhd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI CINEMA HD
-https://rasinetworks.in/live/rasicinemahd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI CINEMAX
-https://rasinetworks.in/live/rasicinemaxhd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI LIFESTYLE 
-https://rasinetworks.in/live/rasilifestylehd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI COMEDY
-https://rasinetworks.in/live/rasicomedyhd/index.mpd
-#EXTINF:-1 tvg-name="RASI" group-title="Rasi",RASI MUSIC
-https://rasinetworks.in/live/rasimusichd/index.mpd
-
 =============================================== OTHER TAMIL CHANNELS ===============================================
 
 #EXTINF:-1 group-title="Tamil",Thanthi One
