@@ -63,7 +63,6 @@ jobs:
             exit 1
           fi
 
-          # Normalize
           sed -i '1s/^\xEF\xBB\xBF//' "$VOD_FILE"
           dos2unix "$VOD_FILE" 2>/dev/null || sed -i 's/\r$//' "$VOD_FILE"
           sed -i 's/[ \t]*$//' "$VOD_FILE"
@@ -78,117 +77,39 @@ jobs:
           OUTPUT="main.m3u"
           OTHER_M3U=".github/workflows/other.m3u"
           VOD_FILE="vod_temp.m3u"
+          SINGLE_M3U_URL="https://showing-consciousness-herbal-chelsea.trycloudflare.com/playlist.m3u"  # <-- REPLACE WITH WORKING URL
+          TEMP_M3U="temp_live.m3u"
 
-          # Header
           echo "#EXTM3U x-tvg-url=\"https://iptv-org.github.io/epg/guides/tamil.xml\"" > "$OUTPUT"
-
-          # Live Tamil channels section
           echo "# === LIVE TAMIL (M3U) ===" >> "$OUTPUT"
 
-          # Alternative working M3U sources (trying multiple sources)
-          M3U_SOURCES=(
-            "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u"
-            "https://raw.githubusercontent.com/iptv-org/iptv/master/playlist.m3u"
-          )
-          
-          M3U_RAW=""
-          TEMP_M3U="temp_live.m3u"
-          
-          # Try to get M3U from alternative sources first
-          for SOURCE in "${M3U_SOURCES[@]}"; do
-            echo "📡 Trying alternative source: $SOURCE"
-            M3U_RAW=$(curl -sfL --max-time 30 \
-              -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-              "$SOURCE" 2>/dev/null)
-            
-            if [ -n "$M3U_RAW" ] && echo "$M3U_RAW" | grep -q "#EXTM3U"; then
-              echo "✅ Got valid M3U from alternative source"
-              echo "$M3U_RAW" > "$TEMP_M3U"
-              break
-            fi
-          done
-          
-          # If alternative sources failed, try the original with better HTML parsing
-          if [ ! -s "$TEMP_M3U" ]; then
-            echo "📡 Fetching from original source: https://allinonereborn.online/m3u/jtv145.m3u"
-            
-            # Use wget with better options to handle redirects
-            wget --max-redirect=10 \
-              --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-              --timeout=30 \
-              --tries=3 \
-              -O raw_response.html \
-              "https://allinonereborn.online/m3u/jtv145.m3u" 2>/dev/null || true
-            
-            # Extract M3U URL from HTML using grep and sed
-            if [ -f raw_response.html ]; then
-              # Look for M3U URL in various patterns
-              M3U_URL=$(grep -oP 'https?://[^\s"'\'']+\.m3u[^\s"'\'']*' raw_response.html | head -1)
-              
-              if [ -z "$M3U_URL" ]; then
-                # Try to find Telegram channel link and extract from there
-                TELEGRAM_LINK=$(grep -oP 'https?://t\.me/[^\s"'\'']+' raw_response.html | head -1)
-                if [ -n "$TELEGRAM_LINK" ]; then
-                  echo "Found Telegram link: $TELEGRAM_LINK"
-                  # You might need to handle Telegram links specially
-                fi
-              fi
-              
-              if [ -n "$M3U_URL" ]; then
-                echo "📥 Found M3U URL: $M3U_URL"
-                curl -sfL --max-time 30 -o "$TEMP_M3U" "$M3U_URL"
-              fi
-              
-              rm -f raw_response.html
-            fi
-          fi
-          
-          # If still no M3U, create a fallback with known working channels
-          if [ ! -s "$TEMP_M3U" ] || ! grep -q "#EXTINF" "$TEMP_M3U"; then
-            echo "⚠️ No M3U source available, using fallback channel list"
-            cat > "$TEMP_M3U" << 'FALLBACK'
-#EXTM3U
-#EXTINF:-1 tvg-id="SunTV.in" tvg-name="Sun TV" tvg-logo="https://i.imgur.com/example.png" group-title="Tamil",Sun TV HD
-https://example.com/suntv.m3u8
-#EXTINF:-1 tvg-id="StarVijay.in" tvg-name="Star Vijay" group-title="Tamil",Star Vijay HD
-https://example.com/vijay.m3u8
-FALLBACK
+          echo "📡 Fetching M3U from single source: $SINGLE_M3U_URL"
+          if ! curl -sfL --max-time 30 \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            -o "$TEMP_M3U" "$SINGLE_M3U_URL"; then
+            echo "❌ Failed to download M3U from the only source. Aborting."
+            exit 1
           fi
 
-          # Process M3U and match channels
+          if [ ! -s "$TEMP_M3U" ] || ! grep -q "#EXTM3U" "$TEMP_M3U"; then
+            echo "❌ Downloaded file is not a valid M3U. Aborting."
+            exit 1
+          fi
+
+          # Normalize the fetched M3U
+          sed -i '1s/^\xEF\xBB\xBF//' "$TEMP_M3U"
+          dos2unix "$TEMP_M3U" 2>/dev/null || sed -i 's/\r$//' "$TEMP_M3U"
+          sed -i 's/[ \t]*$//' "$TEMP_M3U"
+
+          # Process M3U and match Tamil channels
           python3 << 'PYTHON_SCRIPT'
 import re
 import sys
 
-try:
-    with open('temp_live.m3u', 'r', encoding='utf-8', errors='ignore') as f:
-        content = f.read()
-except:
-    print("Failed to read temp_live.m3u", file=sys.stderr)
-    sys.exit(1)
+with open('temp_live.m3u', 'r', encoding='utf-8', errors='ignore') as f:
+    lines = f.readlines()
 
-# If content is HTML or contains HTML, try to extract M3U
-if '<html' in content.lower() or '<!DOCTYPE' in content:
-    print("HTML detected, attempting to extract M3U URLs...", file=sys.stderr)
-    # Find all M3U URLs in the HTML
-    m3u_urls = re.findall(r'https?://[^\s<>"\'\)]+\.m3u[^\s<>"\'\)]*', content)
-    if m3u_urls:
-        print(f"Found M3U URL: {m3u_urls[0]}", file=sys.stderr)
-        # Try to fetch the first M3U URL
-        import urllib.request
-        try:
-            response = urllib.request.urlopen(m3u_urls[0], timeout=30)
-            content = response.read().decode('utf-8', errors='ignore')
-        except Exception as e:
-            print(f"Failed to fetch M3U: {e}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        print("No M3U URLs found in HTML", file=sys.stderr)
-        sys.exit(1)
-
-# Parse M3U content
-lines = content.split('\n')
-
+# Define Tamil channel patterns (adjust based on your actual M3U content)
 channel_patterns = {
     "Sun TV HD": [r'(?i)sun tv', r'(?i)suntv'],
     "Star Vijay HD": [r'(?i)star vijay', r'(?i)vijay tv', r'(?i)vijay'],
@@ -207,12 +128,10 @@ i = 0
 while i < len(lines):
     line = lines[i].strip()
     if line.startswith('#EXTINF:'):
-        # Try to extract channel name
-        channel_match = re.search(r',([^,]+)$', line)
-        if channel_match:
-            channel_name = channel_match.group(1).strip()
+        # Extract channel name (everything after last comma)
+        if ',' in line:
+            channel_name = line.split(',')[-1].strip()
             
-            # Check for matches
             matched_display = None
             for display_name, patterns in channel_patterns.items():
                 for pattern in patterns:
@@ -225,7 +144,7 @@ while i < len(lines):
             if matched_display and matched_display not in matched_names and i + 1 < len(lines):
                 url_line = lines[i + 1].strip()
                 if url_line.startswith(('http://', 'https://')):
-                    # Preserve existing attributes
+                    # Preserve tvg-logo if present
                     tvg_logo = re.search(r'tvg-logo="([^"]*)"', line)
                     logo = tvg_logo.group(1) if tvg_logo else ""
                     
@@ -241,7 +160,6 @@ while i < len(lines):
     else:
         i += 1
 
-# Write matched channels
 with open('matched_channels.txt', 'w', encoding='utf-8') as f:
     for extinf, url in matched_channels:
         f.write(extinf + '\n')
@@ -250,7 +168,6 @@ with open('matched_channels.txt', 'w', encoding='utf-8') as f:
 print(f"COUNT:{len(matched_channels)}", file=sys.stderr)
 PYTHON_SCRIPT
 
-          # Append matched channels
           if [ -f matched_channels.txt ] && [ -s matched_channels.txt ]; then
             cat matched_channels.txt >> "$OUTPUT"
             LIVE_COUNT=$(grep -c '^#EXTINF:' matched_channels.txt 2>/dev/null || echo 0)
@@ -258,17 +175,15 @@ PYTHON_SCRIPT
             rm -f matched_channels.txt
           else
             LIVE_COUNT=0
-            echo "⚠️ No channels matched, using static channels only"
+            echo "⚠️ No Tamil channels matched"
           fi
 
           rm -f "$TEMP_M3U"
 
-          # Append static channels
           echo "" >> "$OUTPUT"
           echo "# === STATIC CHANNELS ===" >> "$OUTPUT"
           grep -v '^#EXTM3U' "$OTHER_M3U" | grep -v '^$' >> "$OUTPUT"
 
-          # Append VOD
           echo "" >> "$OUTPUT"
           echo "# === VOD ===" >> "$OUTPUT"
           
@@ -309,7 +224,6 @@ PYTHON_VOD
           cat vod_processed.txt >> "$OUTPUT"
           rm -f vod_processed.txt
 
-          # Stats
           TAMIL=$(grep -c '^#EXTINF:.*group-title="Tamil"' "$OUTPUT" 2>/dev/null || echo 0)
           STATIC=$(grep -c '^#EXTINF:' "$OTHER_M3U" 2>/dev/null || echo 0)
           VOD=$(grep -c '^#EXTINF:.*group-title="VOD"' "$OUTPUT" 2>/dev/null || echo 0)
